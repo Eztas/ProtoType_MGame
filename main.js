@@ -174,8 +174,7 @@ const initGame = () => {
     judge: null, //タイミング判定
     judgeCount: JUDGE.text.map(() => 0), //各タイミングの判定回数
     //speed: 3, //ノーツ落下速度, デフォルト
-    //speed: 10,
-    speed: 2, // 短い方が実は早く出てくる, 1だとスマホ版では処理堕ち?
+    speed: 1, // 短い方が実は早く出てくる, 1だとスマホ版では処理堕ち?
     isInput: false, //trueなら入力あり
     inputLine: null, //入力ライン
     over: false, //入力ラインを越えたか
