@@ -62,6 +62,7 @@ let playData; //プレイデータ
 let keyList; //キーリスト
 
 let bar; //タイミングバー
+// ノーツの色形設定
 class Bar {
   #width = rectRange.width - rectRange.rightSpace;
   #height = rectRange.height;
@@ -70,7 +71,7 @@ class Bar {
     this.color = color;
   }
   draw(y) {
-    ctx.layer.fillStyle = this.color;
+    ctx.layer.fillStyle = this.color; // ここをコメントアウトするとノーツが白色になる
     ctx.layer.fillRect(this.x, y, this.#width, this.#height);
   }
 }
@@ -129,15 +130,16 @@ const gameStandby = async () => {
     ctx.back.stroke();
   };
 
-  //矩形を描画
+  //矩形(判定ライン)を描画
   const drawBoxes = () => {
     const drawBox = (i) => {
       let x = rectRange.width * i + rectRange.leftSpace + 1,
         width = rectRange.width - rectRange.rightSpace;
       if (0 < i) x -= 1;
-      ctx.back.strokeStyle = BAR_COLOR[i];
+      ctx.back.strokeStyle = BAR_COLOR[i]; // 判定ラインの外側
+
       ctx.back.strokeRect(x, rectRange.y + 0.5, width, rectRange.height);
-      ctx.back.fillStyle = BAR_COLOR[i] + "55";
+      ctx.back.fillStyle = BAR_COLOR[i] + "55"; // 判定ラインの中の色に関わる
       ctx.back.fillRect(x, rectRange.y, width, rectRange.height);
     };
     ctx.back.lineWidth = 2;
@@ -171,7 +173,9 @@ const initGame = () => {
     maxCombo: 0, //MAXコンボ
     judge: null, //タイミング判定
     judgeCount: JUDGE.text.map(() => 0), //各タイミングの判定回数
-    speed: 3, //落下速度
+    //speed: 3, //ノーツ落下速度, デフォルト
+    //speed: 10,
+    speed: 1, // 短い方が実は早く出てくる
     isInput: false, //trueなら入力あり
     inputLine: null, //入力ライン
     over: false, //入力ラインを越えたか
@@ -184,7 +188,7 @@ const initGame = () => {
     },
   };
 
-  //ライン数分のバーを作成
+  //ライン数分のバー(ノーツ)を作成
   const barColor = BAR_COLOR.map((value) => value + "cc");
   const size = notes.getSize();
   bar = [];
@@ -208,7 +212,8 @@ const gamePlay = async () => {
     ++playData.judgeCount[(playData.judge = JUDGE.miss)];
   };
 
-  //バーを描画
+  // バーを描画
+  // ノーツを描画
   const drawTimingBar = () => {
     const current = (player.getCurrentTime() * 1000) | 0;
     for (let i = notes.offset, size = notes.getSize(); i < size; ++i) {
@@ -273,7 +278,7 @@ const gamePlay = async () => {
     }
   };
 
-  //プレイデータを描画
+  //プレイデータ(ゲーム終了時に最終スコア)を描画
   const drawPlayData = () => {
     clearCanvas(ctx.back);
     clearCanvas(ctx.layer);
@@ -325,6 +330,7 @@ const gamePlay = async () => {
 };
 
 //入力情報をセット
+// ノーツに関する調整も行っている
 const setInput = (line) => {
   const y =
     (((player.getCurrentTime() * 1000) | 0) - notes.timing[notes.index]) / playData.speed + rectRange.y;
@@ -384,3 +390,20 @@ window.onload = () => {
     input(false, e);
   };
 };
+
+/*
+function open_other_window(score_to_kill_sat) {
+  //const limit_break_id = "Hilab";
+  //sessionStorage.setItem('limit_break', limit_break_id); 
+  window.location.replace("result.html?="+score_to_kill_sat+"&username="+username); //safariでやると, 戻った時に前の記録が残ったままだったからreplace
+}
+
+if(limit_break_id == "Betrayal Game"){
+  const form = document.forms["score_form"]; // formタグ名
+  const formData = new FormData(form); //score_formに入力された値を取得
+  const xhr = new XMLHttpRequest(); //  送信リクエスト
+
+  xhr.open("POST", url_form); // google_formを開く.
+  xhr.send(formData); // google_formを経由して, 間接的にスプレッドシートにスコアを送る.
+}
+*/
