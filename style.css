@@ -31,6 +31,23 @@ body {
     border: 2px outset #fff;
 }
 
+#speed{
+    position : absolute;
+    top: 400px;
+    left : 110px;
+    width: 20px;
+}
+
+#judge_result{
+    color: white;
+    position: absolute;
+    left : 730px; /*670+60*/
+    top: 445px; /*550-105*/
+    font: 20px;
+    font-family: "MS ゴシック";
+    font-weight: bold;
+}
+
 /*
 a{
     color: #0ff;
