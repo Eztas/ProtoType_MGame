@@ -1,27 +1,20 @@
-// 速度を速くしたとき、後半でラグいような気がした, まあひどくはないから大丈夫かな
-// ランダム生成はいいけど、もしかしたら毎回ノーツがバラバラカモ
-// 間隔変えてる都合のせいか、356or357
-// 1:41:49, 大体1分40秒くらい
-// 時間は一定で、速度が速くなるとそれに応じてノードの数が多くなる
-// 速度8で固定すると、570(可変もないからね)
-// 1:37:12, そこそこ差がでかいな
-// 103000ms, 103秒, 1分43秒
-// 実はHitとThrough足したら前ノーツ数になる? 288 282 234になってた
-// 次 403 167 290 間違いない, こうなるとmissって何? 存在価値ある?
-// ある種、Hitになるまでのmiss, Hit, HitしそびれたThroughに別れるのでは?
-
-const BUTTONS_TOP = 400;
+const BUTTONS_TOP = 500; // デフォルト 400
 const BUTTONS_HEIGHT = 50;
 
 const LANE_WIDTH = 70;
-const LANE_LEFTS = [10, 100, 190, 280];
-const BLOCK_HEIGHT = 50;
+const DEFAULT_LEFT = 600;
+//const LANE_LEFTS = [10, 100, 190, 280];
+const LANE_LEFTS = [DEFAULT_LEFT, DEFAULT_LEFT+LANE_WIDTH, DEFAULT_LEFT+2*LANE_WIDTH, DEFAULT_LEFT+3*LANE_WIDTH];
+const BLOCK_HEIGHT = 50; // 落ちてくるブロックの当たり判定のある部分の高さ
 
+// 落ちてくるブロックの当たり判定のある部分のY座標の最小値と最大値
+// ここを調節したら判定幅は容易に変わる
 const HIT_Y_MIN = BUTTONS_TOP - BLOCK_HEIGHT;
 const HIT_Y_MAX = BUTTONS_TOP + BUTTONS_HEIGHT;
 
-const CANVAS_WIDTH = 360;
-const CANVAS_HEIGHT = 540;
+//const CANVAS_WIDTH = 360;
+const CANVAS_WIDTH = DEFAULT_LEFT+4*LANE_WIDTH;
+const CANVAS_HEIGHT = 640; // デフォルト 540
 
 const $start = document.getElementById('start');
 const $zero = document.getElementById('zero');
@@ -47,14 +40,18 @@ const missLaneNumbers = [];
 const throughLaneNumbers = [];
 
 let isPlaying = false;
-//let speed = 3;
-//let speed = document.getElementById("speed").value;
-let speed = 8; //入力が上手くいっていない?
+let speed = 3;
 let hitCount = 0;
 let missCount = 0;
 let throughCount = 0;
+let comboCount = 0;
+let baseSpeed = 50; // ノーツを落とすスピードのベース, 元は80
+document.getElementById("judge_result").style.position = "absolute";
+document.getElementById("judge_result").style.left = DEFAULT_LEFT+LANE_WIDTH + 50; // 判定結果の左の位置を決定
+document.getElementById("judge_result").style.top = HIT_Y_MAX - 105; // 判定結果の上の位置を決定
 //let resultText = '';
 
+/*
 function initVolumes(initValue){
     const $elemVolume = document.getElementById("volume");
     const $elemRange = document.getElementById("vol-range");
@@ -72,7 +69,7 @@ function initVolumes(initValue){
         //missSound.volume = value;
     }
 }
-
+*/
 const isKeysHit = [false, false, false, false];
 document.onkeydown = (ev) => {
 	if(ev.code == 'KeyD')
@@ -105,7 +102,7 @@ function onKeyHit(index){
 
     // 判定ライン
 	if(hits.length > 0){
-		hits[0].IsHit = true;
+		hits[0].IsHit = true; // 
 		onHit(index);
 	}
 	else{
@@ -127,34 +124,54 @@ function clearCanvas(){
 }
 
 function drawLanes(){
-    ctx.strokeStyle = '#ccc';
+    //ctx.strokeStyle = '#ccc';
+    ctx.strokeStyle = '#fff';
     for(let i =0; i < LANE_LEFTS.length; i++)
         ctx.strokeRect(LANE_LEFTS[i], 0, LANE_WIDTH, $canvas.height);
 }
 
+// 1000/60msに一回, 
 function drawHit(laneNum){
-    ctx.fillStyle = '#0ff';
-    ctx.font = '20px bold MS ゴシック';
-    const textWidth = ctx.measureText('Hit').width;
-    ctx.fillText('HIT', LANE_LEFTS[laneNum] + (LANE_WIDTH - textWidth) / 2, HIT_Y_MAX + 10);
+    //ctx.fillStyle = '#fff';
+    //ctx.fillStyle = '#000';
+    //ctx.font = '20px bold MS ゴシック';
+    //const textWidth = ctx.measureText('Hit').width;
+    //ctx.fillText('HIT', LANE_LEFTS[laneNum] + (LANE_WIDTH - textWidth) / 2, HIT_Y_MAX + 10); // 元のコード
+    //ctx.fillText('', LANE_LEFTS[laneNum] + (LANE_WIDTH - textWidth) / 2, HIT_Y_MAX - 105); // これつけても判定の重複が消えない
+    //ctx.fillText('    ', LANE_LEFTS[1] + 50, HIT_Y_MAX - 105);
+    //ctx.fillStyle = '#fff';
+    //ctx.fillText('HIT', LANE_LEFTS[1] + 50, HIT_Y_MAX - 105); // 雰囲気判定ライン手前の判定
+    document.getElementById("judge_result").textContent='HIT';
 }
 
 function drawThrough(laneNum){
-    ctx.fillStyle = '#ff0';
-    ctx.font = '20px bold MS ゴシック';
-    const textWidth = ctx.measureText('Thro').width; // Thro
-    ctx.fillText('Thro', LANE_LEFTS[laneNum] + (LANE_WIDTH - textWidth) / 2, HIT_Y_MAX + 30);
+    //ctx.fillStyle = '#fff';
+    //ctx.fillStyle = '#000';
+    //ctx.font = '20px bold MS ゴシック';
+    //const textWidth = ctx.measureText('Thro').width; // Thro
+    //ctx.fillText('Thro', LANE_LEFTS[laneNum] + (LANE_WIDTH - textWidth) / 2, HIT_Y_MAX + 30); // 元のコード
+    //ctx.fillText('', LANE_LEFTS[laneNum] + (LANE_WIDTH - textWidth) / 2, HIT_Y_MAX - 105);
+    //ctx.fillText('    ', LANE_LEFTS[1] + 50, HIT_Y_MAX - 105);
+    //ctx.fillStyle = '#fff';
+    //ctx.fillText('Thro', LANE_LEFTS[1] + 50,  HIT_Y_MAX - 105);
+    document.getElementById("judge_result").textContent='Thro';
 }
 
 function drawMiss(laneNum){
-    ctx.fillStyle = '#f0f';
-    ctx.font = '20px bold MS ゴシック';
-    const textWidth = ctx.measureText('Miss').width;
-    ctx.fillText('Miss', LANE_LEFTS[laneNum] + (LANE_WIDTH - textWidth) / 2, HIT_Y_MAX + 50);
+    //ctx.fillStyle = '#fff';
+    //ctx.fillStyle = '#000';
+    //ctx.font = '20px bold MS ゴシック';
+    //const textWidth = ctx.measureText('Miss').width;
+    //ctx.fillText('Miss', LANE_LEFTS[laneNum] + (LANE_WIDTH - textWidth) / 2, HIT_Y_MAX + 50); // 元のコード
+    //ctx.fillText('    ', LANE_LEFTS[1] + 50, HIT_Y_MAX - 105);
+    //ctx.fillStyle = '#fff';
+    //ctx.fillText('Miss', LANE_LEFTS[1] + 50, HIT_Y_MAX - 105); // 雰囲気判定ライン手前の判定
+    document.getElementById("judge_result").textContent='Miss';
 }
 
 function onHit(laneNum){
     hitCount++;
+    comboCount++;
     //okSound.currentTime = 0;
     //okSound.play();
     hitLaneNumbers.push(laneNum);
@@ -165,6 +182,7 @@ function onHit(laneNum){
 
 function onMiss(laneNum){
     missCount++;
+    comboCount = 0;
     //missSound.currentTime = 0;
     //missSound.play();
     missLaneNumbers.push(laneNum);
@@ -175,7 +193,7 @@ function onMiss(laneNum){
 
 function onThrough(laneNum){
 	throughCount++;
-
+    comboCount = 0;
     throughLaneNumbers.push(laneNum);
     setTimeout(() => {
         throughLaneNumbers.shift();
@@ -183,29 +201,32 @@ function onThrough(laneNum){
 }
 
 class Block{
-    constructor(laneNum, delay){
+    constructor(laneNum, delay, distanceForSpeed){
         this.LaneNumber = laneNum;
         this.X = LANE_LEFTS[laneNum];
-        this.Y = - 80 * delay;
+        this.Y = - baseSpeed * distanceForSpeed *  delay; // 実はずっと裏で生成済みになっている, 高さが増えることで目に見える
+        // this.Y = - 80 * delay
         this.Width = LANE_WIDTH;
         this.Height = BLOCK_HEIGHT;
-        this.IsHit = false;
+        this.IsHit = false; // レーン押下時の過剰ヒットを防ぐことと, 未ヒットのものだけスルー対象になるようにする
         this.IsThrough = false;
     }
 
     // ヒットされていないのにHIT_Y_MAXより下に落ちてきたら見逃しと判断する
+    // onkeyhitとaddeventlistenerの2者でtrueにされる
     Update(){
         if(!this.IsHit && !this.IsThrough && this.Y > HIT_Y_MAX){
             this.IsThrough = true;
 			onThrough(this.LaneNumber);
         }
+        // 入力時以外speedここだけ
         this.Y += speed; // 多分speedの分だけ更新しながらYが増える->つまり高度が落ちる->ノーツが落ちる
     }
 
     Draw(){
-        ctx.fillStyle = '#f00';
+        ctx.fillStyle = '#fff';
         ctx.fillRect(this.X, this.Y + 20, this.Width, this.Height - 40);
-        //ctx.fillRect(this.X, this.Y, this.Width, this.Height);
+        //ctx.fillRect(this.X, this.Y, this.Width, this.Height); //でもよいがブロックが厚くなりすぎるので・・・
     }
 }
 
@@ -220,7 +241,7 @@ window.onload = () => {
 
 	setPositionButtons();
 	addEventListeners();
-	initVolumes(0.5);
+	//initVolumes(0.5);
 }
 
 function setPositionButtons(){
@@ -233,7 +254,10 @@ function setPositionButtons(){
     }
 }
 
+// window読み込み時に起動
+// ゲーム開始時のボタン押下に対するイベントリスナと, レーン押下に対するイベントリスナ
 function addEventListeners(){
+    // 最初の起動
 	$start.addEventListener('click', (ev) => {
         ev.preventDefault();
         gameStart();
@@ -244,19 +268,24 @@ function addEventListeners(){
 
     for(let i = 0; i < LANE_LEFTS.length; i++){
         for(let k = 0; k < events.length; k++){
+            // 各ボタンのaddEventListener
             buttons[i].addEventListener(events[k], (ev) => {
-                ev.preventDefault();
+                ev.preventDefault(); // ある種ボタン同時押しは許されない?
 
                 if(!isPlaying)
                     return;
 
                 const hits = blocks.filter(rect => !rect.IsHit && rect.X == LANE_LEFTS[i] && HIT_Y_MIN < rect.Y && rect.Y < HIT_Y_MAX);
+                // hit済みのノーツをもう一度ヒットさせないための、!rect.IsHit
+                // ボタンを押した時に, 判定幅にまだヒット判定のないノーツがあるかを確認
                 if(hits.length > 0){
-					hits[0].IsHit = true;
+					hits[0].IsHit = true; // hitしてたらtrueにして過剰ヒットを防ぐ
                     onHit(i);
 				}
-                else
+                // Missの範囲を設けないと意味がない感
+                else{
                     onMiss(i);
+                }
             });
         }
     }
@@ -264,8 +293,9 @@ function addEventListeners(){
 
 /*
 タイマー処理の部分を示します。
-現在プレイ中でない場合は何もしません。更新時はブロックの落下速度を少しずつ上げていきます
-->速度可変取り除く予定
+現在プレイ中でない場合は何もしません。
+更新時はブロックの落下速度を少しずつ上げていきます -> 取り除きました
+スコア表示もここで
 */
 setInterval(() => {
     if(!isPlaying)
@@ -276,7 +306,7 @@ setInterval(() => {
 	clearCanvas();
 	drawLanes();
 
-    blocks.forEach(block => block.Update());
+    blocks.forEach(block => block.Update()); // blocksの中のblockを1つずつ取り出し、個々で更新する
     blocks.forEach(block => block.Draw());
 
     hitLaneNumbers.forEach(num => drawHit(num));
@@ -286,26 +316,43 @@ setInterval(() => {
     ctx.font = '20px bold MS ゴシック';
     ctx.textBaseline = 'top';
     ctx.fillStyle = '#fff';
-    ctx.fillText(`Hit  ${hitCount}    Through  ${throughCount}    Miss  ${missCount}`, 10, 10);
-}, 1000 / 60);
+    //ctx.fillText(`Hit  ${hitCount}    Through  ${throughCount}    Miss  ${missCount}`, 10, 10);
+    ctx.fillText(`Combo`, LANE_LEFTS[1] + 50, $canvas.height/2 - 80);
+    ctx.fillText(`${comboCount}`, LANE_LEFTS[1] + 50, $canvas.height/2 - 60); // コンボ数を真ん中に表示
+    ctx.fillText(`Score:  ${10000 * hitCount}`, LANE_LEFTS[1], 10); // スコアを画面上に表示
+//}, 1000 / 60);
+}, 1000 / 100);
 
 function gameStart(){
+
+    speed = parseFloat(document.getElementById("speed").value); // なんかvalueでも事故る
+    document.getElementById("speed").style.display = 'none';
     blocks.length = 0;
+    
+    // なぜか判定結果の位置を動的に変えられない
     // 上から落ちてくるブロックをランダムに生成する
     // だんだん間隔を詰める
+    // 20, 20, 530個, 故に, 計570個
+    /*
     for(let i=0; i < 40; i += 2)
 		blocks.push(new Block(Math.floor(Math.random() * 4), i));
     for(let i=40; i < 70; i += 1.5)
 		blocks.push(new Block(Math.floor(Math.random() * 4), i));
     for(let i=70; i < 600; i ++)
 		blocks.push(new Block(Math.floor(Math.random() * 4), i));
+    */
+    // laneNum と Delay
+    // speedに応じてこのDelayをかけたらいいのでは
+    for(let i=0; i < 600; i ++) {
+        blocks.push(new Block(Math.floor(Math.random() * 4), i, speed));
+        //blocks.push(new Block(Math.floor(Math.random() * 4), i, (speed))); // これにしたら間隔詰まってる感は出てきた, delayとかあの-80とかの調整かな
+    }
 
     hitCount = 0;
     missCount = 0;
     throughCount = 0;
+    comboCount = 0;
 
-    speed = 8; // letでspeed定義しているが、ここで実際には代入
-    //speed = document.getElementById("speed").value; // なんかvalueでも事故る
     isPlaying = true;
 
     //bgm.currentTime = 0;
@@ -313,9 +360,10 @@ function gameStart(){
 
     $start.style.display = 'none';
 
-    // BGMの終了近くになったら以降は新しいブロックを落とさないようにする
+    // BGMの終了近くになったら以降は新しいブロックを落とさないようにする 1000*100の話
     // blocksからY座標が-10以下のものと取り除く（ついでに必要ないCANVAS_HEIGHT以上のものの取り除く）
     setTimeout(() => {
+        // blocksの中でも、-10以下までのもの(上表示すぎるもの)と, HWIGHT以上, 既に通過したものを取り消す(filterの条件に合わないようにして格納させない)
         blocks = blocks.filter(rect => rect.Y > -10 && rect.Y < CANVAS_HEIGHT);
     }, 1000 * 100);
 
@@ -327,30 +375,31 @@ function gameStart(){
 
         const resultText = `Hit: ${hitCount}\nThrough: ${throughCount}\nMiss: ${missCount}`;
         showResult(resultText);
-    }, 1000 * 103); // 1000 * 103
+    }, 1000 * 102); // 1000 * 103
 }
 
 
 function showResult(resultText){
+    clearCanvas(); // コンボとかが邪魔, ここは最悪画面遷移でもいい
     const arr = resultText.split('\n');
     if(arr.length < 3)
         return;
 
-    ctx.fillStyle = '#ff0';
+    ctx.fillStyle = '#fff';
     ctx.font = '20px bold MS ゴシック';
 
-    const textWidth1 = ctx.measureText('結果').width;
+    const textWidth1 = ctx.measureText('result').width;
     const x1 =  (CANVAS_WIDTH - textWidth1) / 2;
     ctx.fillStyle = '#fff';
     ctx.fillText('結果', x1, 160);
 
     const textWidth = ctx.measureText(arr[1]).width;
     const x =  (CANVAS_WIDTH - textWidth) / 2;
-    ctx.fillStyle = '#0ff';
+    ctx.fillStyle = '#fff';
     ctx.fillText(arr[0], x, 200);
-    ctx.fillStyle = '#ff0';
+    ctx.fillStyle = '#fff';
     ctx.fillText(arr[1], x, 230);
-    ctx.fillStyle = '#f0f';
+    ctx.fillStyle = '#fff';
     ctx.fillText(arr[2], x, 260);
 
     $start.style.display = 'block';
