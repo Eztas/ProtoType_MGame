@@ -41,11 +41,9 @@ body {
 #judge_result{
     color: white;
     position: absolute;
-    left : 730px; /*670+60*/
-    top: 445px; /*550-105*/
     font: 20px;
     font-family: "MS ゴシック";
-    font-weight: bold;
+    /*font-weight: bold;*/
 }
 
 /*
