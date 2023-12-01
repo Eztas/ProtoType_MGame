@@ -1,8 +1,61 @@
+// 速度を速くしたとき、後半でラグいような気がした, まあひどくはないから大丈夫かな
+// 1:41:49, 大体1分40秒くらい, 1:37:12
+// 103000ms, 103秒, 1分43秒
+// 時間は一定で、速度が速くなるとそれに応じてノードの数が多くなる
+// 速度8以上で設定数最大, というかそれ未満だとそもそもノーツを出し切れない
+// コンボ数がジャマに感じるのも, スマホ版だから? 横向きで, 縦画面の長さに関する情報量がないから?
+
+// 問題点
+// なんもない時に押すとMISS扱い->MISSの幅が必要
+// 文字の大きさは画面の比率で考えたらいいんじゃないか
+// 参考にしないといけない者->文字の大きさ, スコアの付け方, ノーツの落ちる速度の方程式(間隔は入力スピードに合わせてどう変化するか)
+// 間隔開けて見やすくなったけどノーツが減ったな、1+0.1speed方式, でもやはりspeed呑み方式の方が便利
+
+// 1000/60  speed1->61 , speed5->196, speed10->261
+// 1000/100 speed1->???, speed5->313, speed10->???
+// 1000/100, basespeed = 60, speed1->161 , speed2 -> 166, speed2.5 -> 167 speed5->167, speed8->167, speed10->167, speed方式にしたら全部同じや!
+// 1000/100, basespeed = 50, speed1->161 , speed2 -> 166, speed2.5 -> 167 speed5->167, speed8->167, speed10->167, speed方式にしたら全部同じや!
+
+// 参考にするもの
+// チュウニズム->3D奥行き式, スコア真上, コンボ真ん中(上にcombo, 下に数字), まさかの判定位置がコンボと同じ位置
+// beatmania->2D式, スコア真下, 判定ラインちょい上に, 判定結果 コンボ数という形で表示
+// 論文「視線追従装置を用いたリズムアクションゲームにおけるスキルの分析」
+// BMS -> 既にないのかどのゲームをしてたか分からない, あと拡張子名らしく分からない
+// と思ったら簡略図があった
+// BMS 評価判定は画面中央ちょい下, 左右は真ん中, コンボ数なし, スコアない代わりに真下にグルーブゲージ(溜まると終了)
+// pop'n music13 カーニバル これに関しては具体的な図がない
+// 予備実験1 BMS -> 予備実験2 pop'n ->本実験BMS
+// フロー理論を用いた音楽ゲームの要素が面白さに与える影響
+// スコア左上, コンボ数真ん中, 判定結果を判定ライン真上, なおこっちは右上にも判定結果一覧を常時載せてる
+
+// 配置とは関係ないが、フロー理論を用いた音楽ゲームの要素が面白さに与える影響では
+// スコアを100万点にして, ノーツ数でそれを割り, その点を加算させていた
+
+
+
+// 関数説明
+// filter関数, 配列に繋げる 使用方法は以下のようになります。
+// 配列の値を、foreachのように一つずつ関数内の式で判定していきます。
+// 判定でtrueになった場合だけ、新しく用意した配列に格納されます！
+// const hoge = array.filter(value => value > 3), arrayの中で、条件を満たす値だけ, hogeに格納する
+
+// forEach関数 配列に含まれる要素を先頭から順に取り出しコールバック関数を呼び出します。
+// fruit.forEach(element => console.log(element));, fruitの要素を最初からとって、elementに格納して関数に用いる
+
+// shift関数 配列の先頭の要素を削除しつつ, 返り値にはその先頭要素を渡す
+
+// push関数 配列の末尾に引数の要素を追加する
+
+// window.innerWidth
+// window.innerHeight
+// devicePixelRatio
+
 const BUTTONS_TOP = 500; // デフォルト 400
 const BUTTONS_HEIGHT = 50;
 
 const LANE_WIDTH = 70;
-const DEFAULT_LEFT = 600;
+//const DEFAULT_LEFT = 600;window.innerWidth
+const DEFAULT_LEFT = window.innerWidth/2 - 2*LANE_WIDTH
 //const LANE_LEFTS = [10, 100, 190, 280];
 const LANE_LEFTS = [DEFAULT_LEFT, DEFAULT_LEFT+LANE_WIDTH, DEFAULT_LEFT+2*LANE_WIDTH, DEFAULT_LEFT+3*LANE_WIDTH];
 const BLOCK_HEIGHT = 50; // 落ちてくるブロックの当たり判定のある部分の高さ
@@ -46,9 +99,6 @@ let missCount = 0;
 let throughCount = 0;
 let comboCount = 0;
 let baseSpeed = 50; // ノーツを落とすスピードのベース, 元は80
-document.getElementById("judge_result").style.position = "absolute";
-document.getElementById("judge_result").style.left = DEFAULT_LEFT+LANE_WIDTH + 50; // 判定結果の左の位置を決定
-document.getElementById("judge_result").style.top = HIT_Y_MAX - 105; // 判定結果の上の位置を決定
 //let resultText = '';
 
 /*
@@ -167,6 +217,7 @@ function drawMiss(laneNum){
     //ctx.fillStyle = '#fff';
     //ctx.fillText('Miss', LANE_LEFTS[1] + 50, HIT_Y_MAX - 105); // 雰囲気判定ライン手前の判定
     document.getElementById("judge_result").textContent='Miss';
+    //ctx.textContent('Miss', LANE_LEFTS[1] + 50, HIT_Y_MAX - 105);
 }
 
 function onHit(laneNum){
@@ -328,7 +379,8 @@ function gameStart(){
     speed = parseFloat(document.getElementById("speed").value); // なんかvalueでも事故る
     document.getElementById("speed").style.display = 'none';
     blocks.length = 0;
-    
+    document.getElementById("judge_result").style.left = DEFAULT_LEFT+2*LANE_WIDTH - 10 + 'px'; // 判定結果の左の位置を決定
+    document.getElementById("judge_result").style.top = HIT_Y_MAX - 105 + 'px'; // 判定結果の上の位置を決定
     // なぜか判定結果の位置を動的に変えられない
     // 上から落ちてくるブロックをランダムに生成する
     // だんだん間隔を詰める
